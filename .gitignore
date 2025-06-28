@@ -1,0 +1,56 @@
+# Gradle
+/.gradle/
+/build/
+**/build/
+
+# IntelliJ IDEA
+/.idea/
+*.iml
+*.ipr
+*.iws
+
+# Eclipse
+/.metadata/
+/.project
+/.classpath
+/.settings/
+
+# VSCode
+/.vscode/
+
+# MacOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# JVM Crash Logs
+hs_err_pid*
+
+# Generated files
+/out/
+/target/
+
+# Local configuration files (might contain sensitive data)
+local.properties
+gradle-local.properties
+
+# Test outputs
+/test-results/
+/jacoco/
+
+# Distribution archives
+*.tar.gz
+*.zip
+
+# Local development
+*.local
+.env
