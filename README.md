@@ -67,18 +67,6 @@ implementation 'io.github.yourusername:api-rate-limiter-storage-memory:1.0.0'
 ./gradlew :algorithms:token-bucket:test
 ```
 
-## 성능
-
-- **단일 스레드**: ~100,000 ops/ms
-- **멀티 스레드**: ~10,000 ops/ms (10 threads)
-- **메모리 사용량**: 버킷당 ~200 bytes
-
-
-## 🔮 로드맵
-
-- **v1.1**: Redis 저장소 지원 (분산 환경)
-- **v1.2**:  Spring Boot Starter
-
 ## 📄 라이선스
 
 MIT License - 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
