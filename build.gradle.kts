@@ -4,7 +4,7 @@ plugins {
 }
 
 allprojects {
-    group = "io.github.yourusername"
+    group = "io.github.ckaanf"
     version = "1.0.0-SNAPSHOT"
 
     repositories {
@@ -23,15 +23,6 @@ subprojects {
         withJavadocJar()
     }
 
-    dependencies {
-        implementation("org.slf4j:slf4j-api:2.0.7")
-
-        testImplementation(platform("org.junit:junit-bom:5.9.2"))
-        testImplementation("org.junit.jupiter:junit-jupiter")
-        testImplementation("org.assertj:assertj-core:3.24.2")
-        testImplementation("org.mockito:mockito-core:5.3.1")
-    }
-
     tasks.test {
         useJUnitPlatform()
     }
@@ -44,7 +35,7 @@ subprojects {
                 pom {
                     name.set(project.name)
                     description.set("API Rate Limiter Library - ${project.name}")
-                    url.set("https://github.com/yourusername/api-rate-limiter")
+                    url.set("https://github.com/ckaanf/api-rate-limiter")
 
                     licenses {
                         license {
@@ -59,12 +50,22 @@ subprojects {
                             name.set("ckaanf")
                             email.set("skywlstn777@gmail.com")
                         }
+                        developer {
+                            id.set("user2")
+                            name.set("user2")
+                            email.set("user2")
+                        }
+                        developer {
+                            id.set("user3")
+                            name.set("user3")
+                            email.set("user3")
+                        }
                     }
 
                     scm {
-                        connection.set("scm:git:git://github.com/yourusername/api-rate-limiter.git")
-                        developerConnection.set("scm:git:ssh://github.com/yourusername/api-rate-limiter.git")
-                        url.set("https://github.com/yourusername/api-rate-limiter")
+                        connection.set("scm:git:git://github.com/ckaanf/api-rate-limiter.git")
+                        developerConnection.set("scm:git:ssh://github.com/ckaanf/api-rate-limiter.git")
+                        url.set("https://github.com/ckaanf/api-rate-limiter")
                     }
                 }
             }
