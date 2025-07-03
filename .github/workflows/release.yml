@@ -1,0 +1,234 @@
+
+name: Release and Deploy
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+      - 'LICENSE'
+      - '.github/**'
+
+jobs:
+  test:
+    name: Run Tests Before Release
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Run tests
+        run: ./gradlew test --no-daemon --stacktrace
+
+      - name: Build all modules
+        run: ./gradlew build --no-daemon
+
+  determine-version:
+    name: Determine Version
+    runs-on: ubuntu-latest
+    needs: test
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      should_release: ${{ steps.version.outputs.should_release }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine version
+        id: version
+        run: |
+          # 현재 버전 확인
+          CURRENT_VERSION=$(grep "version = " build.gradle.kts | sed 's/.*version = "\(.*\)".*/\1/')
+          echo "Current version: $CURRENT_VERSION"
+          
+          # 마지막 태그 확인
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "Last tag: $LAST_TAG"
+          
+          # 버전 비교해서 릴리즈 필요한지 확인
+          LAST_VERSION=${LAST_TAG#v}  # v 제거
+          
+          if [[ "$CURRENT_VERSION" != "$LAST_VERSION" ]]; then
+            echo "New version detected: $CURRENT_VERSION (last: $LAST_VERSION)"
+            echo "should_release=true" >> $GITHUB_OUTPUT
+            echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+            echo "tag=v$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "No version change detected"
+            echo "should_release=false" >> $GITHUB_OUTPUT
+          fi
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: determine-version
+    if: needs.determine-version.outputs.should_release == 'true'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # 마지막 태그부터의 커밋 로그로 체인지로그 생성
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          
+          if [ -z "$LAST_TAG" ]; then
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges --since="2 weeks ago")
+          else
+            CHANGELOG=$(git log ${LAST_TAG}..HEAD --pretty=format:"- %s (%h)" --no-merges)
+          fi
+          
+          # 체인지로그가 비어있으면 기본 메시지
+          if [ -z "$CHANGELOG" ]; then
+            CHANGELOG="- Minor improvements and bug fixes"
+          fi
+          
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create Release and Tag
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ needs.determine-version.outputs.tag }}
+          release_name: Release ${{ needs.determine-version.outputs.tag }}
+          body: |
+            ## 🚀 What's New in ${{ needs.determine-version.outputs.tag }}
+            
+            ${{ steps.changelog.outputs.changelog }}
+            
+            ## 📦 Installation
+            
+            ### Gradle (Kotlin DSL)
+            ```kotlin
+            dependencies {
+                // Spring Boot Starter (권장)
+                implementation("com.github.ckaanf.api-rate-limiter:rate-limiter-spring-boot-starter:${{ needs.determine-version.outputs.tag }}")
+            
+                // 또는 개별 모듈
+                implementation("com.github.ckaanf.api-rate-limiter:rate-limiter-core:${{ needs.determine-version.outputs.tag }}")
+                implementation("com.github.ckaanf.api-rate-limiter:rate-limiter-algorithm-token-bucket:${{ needs.determine-version.outputs.tag }}")
+            }
+            ```
+            
+            ### Gradle (Groovy)
+            ```groovy
+            dependencies {
+                implementation 'com.github.ckaanf.api-rate-limiter:rate-limiter-spring-boot-starter:${{ needs.determine-version.outputs.tag }}'
+            }
+            ```
+            
+            ### Maven
+            ```xml
+            <dependency>
+                <groupId>com.github.ckaanf.api-rate-limiter</groupId>
+                <artifactId>rate-limiter-spring-boot-starter</artifactId>
+                <version>${{ needs.determine-version.outputs.tag }}</version>
+            </dependency>
+            ```
+            
+            ## 🔍 JitPack Status
+            
+            빌드 상태 확인: [JitPack Build Status](https://jitpack.io/#ckaanf/api-rate-limiter/${{ needs.determine-version.outputs.tag }})
+            
+            > **Note**: JitPack 빌드는 태그 생성 후 자동으로 시작됩니다. 첫 번째 의존성 요청 시 빌드가 트리거될 수 있습니다.
+          draft: false
+          prerelease: false
+
+  # JitPack 상태 확인 (선택사항)
+  check-jitpack:
+    name: Check JitPack Build Status
+    runs-on: ubuntu-latest
+    needs: [determine-version, create-release]
+    if: needs.determine-version.outputs.should_release == 'true'
+    
+    steps:
+      - name: Wait for JitPack
+        run: |
+          echo "⏳ JitPack 빌드 대기 중..."
+          sleep 60  # JitPack이 태그를 감지할 시간 제공
+
+      - name: Check JitPack build status
+        run: |
+          VERSION="${{ needs.determine-version.outputs.tag }}"
+          echo "🔍 JitPack 빌드 상태 확인: $VERSION"
+          
+          # JitPack API로 빌드 상태 확인
+          RESPONSE=$(curl -s "https://jitpack.io/api/builds/com.github.ckaanf/api-rate-limiter/$VERSION" || echo '{"status":"unknown"}')
+          STATUS=$(echo "$RESPONSE" | jq -r '.status // "unknown"')
+          
+          echo "📊 JitPack 빌드 상태: $STATUS"
+          echo "🔗 빌드 로그: https://jitpack.io/com/github/ckaanf/api-rate-limiter/$VERSION/build.log"
+          
+          case "$STATUS" in
+            "ok")
+              echo "✅ JitPack 빌드 성공!"
+              ;;
+            "building")
+              echo "🔄 JitPack 빌드 진행 중..."
+              ;;
+            "error"|"fail")
+              echo "❌ JitPack 빌드 실패"
+              echo "📋 로그를 확인해주세요: https://jitpack.io/com/github/ckaanf/api-rate-limiter/$VERSION/build.log"
+              exit 1
+              ;;
+            *)
+              echo "ℹ️  JitPack 빌드 상태를 확인할 수 없습니다. 수동으로 확인해주세요."
+              echo "🔗 https://jitpack.io/#ckaanf/api-rate-limiter/$VERSION"
+              ;;
+          esac
+
+  # 릴리즈 알림 (선택사항)
+  notify-release:
+    name: Notify Release
+    runs-on: ubuntu-latest
+    needs: [determine-version, create-release, check-jitpack]
+    if: always() && needs.determine-version.outputs.should_release == 'true'
+    
+    steps:
+      - name: Create release summary
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const version = '${{ needs.determine-version.outputs.tag }}';
+            const jitpackStatus = '${{ needs.check-jitpack.result }}';
+            
+            const summary = `
+            ## 🎉 Release $version Published!
+            
+            **📦 GitHub Release:** [View Release](https://github.com/${{ github.repository }}/releases/tag/${version})
+            
+            **🚀 JitPack Status:** ${jitpackStatus === 'success' ? '✅ Ready' : '⏳ Building'}
+            
+            **📖 Usage:**
+            \`\`\`kotlin
+            dependencies {
+                implementation("com.github.ckaanf.api-rate-limiter:rate-limiter-spring-boot-starter:${version}")
+            }
+            \`\`\`
+            
+            **🔗 Links:**
+            - [JitPack Page](https://jitpack.io/#ckaanf/api-rate-limiter/${version})
+            - [Documentation](https://github.com/${{ github.repository }}#readme)
+            `;
+            
+            console.log(summary);
