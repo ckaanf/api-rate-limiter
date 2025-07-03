@@ -5,7 +5,7 @@ plugins {
 
 allprojects {
     group = "io.github.ckaanf"
-    version = "1.0.2"
+    version = "1.0.0"
 
     repositories {
         mavenCentral()
@@ -42,6 +42,7 @@ subprojects {
                 from(components["java"])
 
                 artifactId = getArtifactId(project.path)
+                groupId = project.group.toString()
 
                 pom {
                     name.set("${project.group}:${artifactId}")
