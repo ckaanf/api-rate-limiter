@@ -5,10 +5,11 @@ plugins {
 
 allprojects {
     group = "io.github.ckaanf"
-    version = "1.0.0-SNAPSHOT"
+    version = "1.0.0"
 
     repositories {
         mavenCentral()
+        maven("https://jitpack.io")
     }
 }
 
@@ -17,8 +18,8 @@ subprojects {
     apply(plugin = "maven-publish")
 
     java {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
         withSourcesJar()
         withJavadocJar()
     }
@@ -27,14 +28,24 @@ subprojects {
         useJUnitPlatform()
     }
 
+    dependencies {
+        testImplementation(platform("org.junit:junit-bom:5.9.2"))
+        testImplementation("org.junit.jupiter:junit-jupiter")
+        testImplementation("org.mockito:mockito-core:5.7.0")
+        testImplementation("org.mockito:mockito-junit-jupiter:5.1.1")
+        testImplementation("org.assertj:assertj-core:3.24.2")
+    }
+
     publishing {
         publications {
             create<MavenPublication>("maven") {
                 from(components["java"])
 
+                artifactId = getArtifactId(project.path)
+
                 pom {
-                    name.set(project.name)
-                    description.set("API Rate Limiter Library - ${project.name}")
+                    name.set("${project.group}:${artifactId}")
+                    description.set(getModuleDescription(project.path))
                     url.set("https://github.com/ckaanf/api-rate-limiter")
 
                     licenses {
@@ -50,16 +61,6 @@ subprojects {
                             name.set("ckaanf")
                             email.set("skywlstn777@gmail.com")
                         }
-                        developer {
-                            id.set("user2")
-                            name.set("user2")
-                            email.set("user2")
-                        }
-                        developer {
-                            id.set("user3")
-                            name.set("user3")
-                            email.set("user3")
-                        }
                     }
 
                     scm {
@@ -70,5 +71,34 @@ subprojects {
                 }
             }
         }
+    }
+}
+
+tasks.withType<PublishToMavenRepository> {
+    enabled = false
+}
+tasks.withType<PublishToMavenLocal> {
+    enabled = false
+}
+
+fun getArtifactId(projectPath: String): String {
+    return when (projectPath) {
+        ":core" -> "core"
+        ":algorithms:token-bucket" -> "algorithm-token-bucket"
+        ":storage:inmemory" -> "storage-inmemory"
+        ":storage:redis" -> "storage-redis"
+        ":integrations:spring-boot-starter" -> "spring-boot-starter"
+        else -> project.name.replace(":", "-")
+    }
+}
+
+fun getModuleDescription(projectPath: String): String {
+    return when (projectPath) {
+        ":core" -> "API Rate Limiter - Core interfaces and contracts"
+        ":algorithms:token-bucket" -> "API Rate Limiter - Token Bucket algorithm implementation"
+        ":storage:inmemory" -> "API Rate Limiter - In-memory storage implementation"
+        ":storage:redis" -> "API Rate Limiter - Redis storage implementation"
+        ":integrations:spring-boot-starter" -> "API Rate Limiter - Spring Boot Auto Configuration"
+        else -> "API Rate Limiter - ${projectPath.removePrefix(":")}"
     }
 }
