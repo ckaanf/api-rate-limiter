@@ -9,6 +9,11 @@ on:
       - '.gitignore'
       - 'LICENSE'
       - '.github/**'
+      
+permissions:
+  contents: write  # 릴리즈 생성 및 태그 생성 권한
+  issues: write    # 이슈 생성 권한 (선택)
+  pull-requests: write  # PR 관련 권한 (선택)
 
 jobs:
   test:
