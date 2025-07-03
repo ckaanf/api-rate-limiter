@@ -5,7 +5,7 @@ plugins {
 
 allprojects {
     group = "io.github.ckaanf"
-    version = "1.0.1"
+    version = "1.0.2"
 
     repositories {
         mavenCentral()
