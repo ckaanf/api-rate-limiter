@@ -1,4 +1,3 @@
-
 name: Release and Deploy
 
 on:
@@ -76,7 +75,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: determine-version
     if: needs.determine-version.outputs.should_release == 'true'
-    
+
+    permissions:
+      contents: write  # 릴리즈 생성 권한
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -104,13 +106,12 @@ jobs:
           echo "$CHANGELOG" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
+      # 새로운 릴리즈 액션 사용
       - name: Create Release and Tag
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ needs.determine-version.outputs.tag }}
-          release_name: Release ${{ needs.determine-version.outputs.tag }}
+          name: Release ${{ needs.determine-version.outputs.tag }}
           body: |
             ## 🚀 What's New in ${{ needs.determine-version.outputs.tag }}
             
@@ -153,12 +154,13 @@ jobs:
             > **Note**: JitPack 빌드는 태그 생성 후 자동으로 시작됩니다. 첫 번째 의존성 요청 시 빌드가 트리거될 수 있습니다.
           draft: false
           prerelease: false
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   # JitPack 상태 확인 (선택사항)
   check-jitpack:
     name: Check JitPack Build Status
     runs-on: ubuntu-latest
-    needs: [determine-version, create-release]
+    needs: [ determine-version, create-release ]
     if: needs.determine-version.outputs.should_release == 'true'
     
     steps:
@@ -201,7 +203,7 @@ jobs:
   notify-release:
     name: Notify Release
     runs-on: ubuntu-latest
-    needs: [determine-version, create-release, check-jitpack]
+    needs: [ determine-version, create-release, check-jitpack ]
     if: always() && needs.determine-version.outputs.should_release == 'true'
     
     steps:
