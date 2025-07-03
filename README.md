@@ -24,7 +24,7 @@ implementation 'io.github.yourusername:api-rate-limiter-storage-memory:1.0.0'
 ### 기본 사용법
 
 ```java 
-// 1. 간단한 사용 - 초당 10개 요청 허용 RateLimiter limiter = RateLimiters.create( RateLimiterConfig.tokenBucketPerSecond(;
+// 1. 간단한 사용 - 초당 10개 요청 허용 io.github.ckaanf.ratelimiter.core.RateLimiter limiter = RateLimiters.create( io.github.ckaanf.ratelimiter.core.RateLimiterConfig.tokenBucketPerSecond(;
 
 
 ``` 
