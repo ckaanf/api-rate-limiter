@@ -1,3 +1,10 @@
+import io.github.ckaanf.ratelimiter.algorithms.tokenbucket.StorageBasedTokenBucketRateLimiter;
+import io.github.ckaanf.ratelimiter.algorithms.tokenbucket.TokenBucketAlgorithmConfig;
+import io.github.ckaanf.ratelimiter.algorithms.tokenbucket.TokenBucketProvider;
+import io.github.ckaanf.ratelimiter.core.AlgorithmConfig;
+import io.github.ckaanf.ratelimiter.core.RateLimiter;
+import io.github.ckaanf.ratelimiter.core.RateLimiterConfig;
+import io.github.ckaanf.ratelimiter.core.RateLimiterStorage;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.mockito.Mockito;
@@ -15,7 +22,7 @@ class TokenBucketProviderTest {
     }
 
     @Test
-    @DisplayName("TokenBucketAlgorithmConfig 지원 확인")
+    @DisplayName("io.github.ckaanf.ratelimiter.algorithms.tokenbucket.TokenBucketAlgorithmConfig 지원 확인")
     void shouldSupportTokenBucketConfig() {
         // Given
         RateLimiterConfig config = Mockito.mock(RateLimiterConfig.class);
