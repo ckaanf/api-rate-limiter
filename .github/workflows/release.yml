@@ -15,9 +15,6 @@ permissions:
   issues: write    # 이슈 생성 권한 (선택)
   pull-requests: write  # PR 관련 권한 (선택)
 
-permissions:
-  contents: write
-
 jobs:
   test:
     name: Run Tests Before Release
