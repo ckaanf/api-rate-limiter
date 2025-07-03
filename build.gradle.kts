@@ -42,6 +42,7 @@ subprojects {
                 from(components["java"])
 
                 artifactId = getArtifactId(project.path)
+                groupId = project.group.toString()
 
                 pom {
                     name.set("${project.group}:${artifactId}")

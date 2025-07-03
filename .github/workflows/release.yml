@@ -26,6 +26,9 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
       - name: Run tests
         run: ./gradlew test --no-daemon --stacktrace
 
@@ -54,18 +57,19 @@ jobs:
           CURRENT_VERSION=$(grep "version = " build.gradle.kts | sed 's/.*version = "\(.*\)".*/\1/')
           echo "Current version: $CURRENT_VERSION"
           
-          # 마지막 태그 확인
-          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          # 마지막 태그 확인 (v 있는 태그와 없는 태그 모두 고려)
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
           echo "Last tag: $LAST_TAG"
           
-          # 버전 비교해서 릴리즈 필요한지 확인
-          LAST_VERSION=${LAST_TAG#v}  # v 제거
+          # v가 있다면 제거
+          LAST_VERSION=${LAST_TAG#v}
+          echo "Last version (without v): $LAST_VERSION"
           
           if [[ "$CURRENT_VERSION" != "$LAST_VERSION" ]]; then
             echo "New version detected: $CURRENT_VERSION (last: $LAST_VERSION)"
             echo "should_release=true" >> $GITHUB_OUTPUT
             echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
-            echo "tag=v$CURRENT_VERSION" >> $GITHUB_OUTPUT
+            echo "tag=$CURRENT_VERSION" >> $GITHUB_OUTPUT  # v 제거!
           else
             echo "No version change detected"
             echo "should_release=false" >> $GITHUB_OUTPUT
@@ -76,7 +80,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: determine-version
     if: needs.determine-version.outputs.should_release == 'true'
-    
+
+    permissions:
+      contents: write
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -87,12 +94,13 @@ jobs:
         id: changelog
         run: |
           # 마지막 태그부터의 커밋 로그로 체인지로그 생성
+          # v 있는 태그와 없는 태그 모두 처리
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           
           if [ -z "$LAST_TAG" ]; then
-            CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges --since="2 weeks ago")
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges --since="2 weeks ago" | head -20)
           else
-            CHANGELOG=$(git log ${LAST_TAG}..HEAD --pretty=format:"- %s (%h)" --no-merges)
+            CHANGELOG=$(git log ${LAST_TAG}..HEAD --pretty=format:"- %s (%h)" --no-merges | head -20)
           fi
           
           # 체인지로그가 비어있으면 기본 메시지
@@ -105,12 +113,10 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create Release and Tag
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ needs.determine-version.outputs.tag }}
-          release_name: Release ${{ needs.determine-version.outputs.tag }}
+          tag_name: ${{ needs.determine-version.outputs.tag }}  # v 없는 태그
+          name: Release ${{ needs.determine-version.outputs.tag }}  # v 없는 이름
           body: |
             ## 🚀 What's New in ${{ needs.determine-version.outputs.tag }}
             
@@ -120,6 +126,10 @@ jobs:
             
             ### Gradle (Kotlin DSL)
             ```kotlin
+            repositories {
+                maven("https://jitpack.io")
+            }
+            
             dependencies {
                 // Spring Boot Starter (권장)
                 implementation("com.github.ckaanf.api-rate-limiter:rate-limiter-spring-boot-starter:${{ needs.determine-version.outputs.tag }}")
@@ -132,6 +142,10 @@ jobs:
             
             ### Gradle (Groovy)
             ```groovy
+            repositories {
+                maven { url 'https://jitpack.io' }
+            }
+            
             dependencies {
                 implementation 'com.github.ckaanf.api-rate-limiter:rate-limiter-spring-boot-starter:${{ needs.determine-version.outputs.tag }}'
             }
@@ -139,6 +153,13 @@ jobs:
             
             ### Maven
             ```xml
+            <repositories>
+                <repository>
+                    <id>jitpack.io</id>
+                    <url>https://jitpack.io</url>
+                </repository>
+            </repositories>
+            
             <dependency>
                 <groupId>com.github.ckaanf.api-rate-limiter</groupId>
                 <artifactId>rate-limiter-spring-boot-starter</artifactId>
@@ -153,19 +174,20 @@ jobs:
             > **Note**: JitPack 빌드는 태그 생성 후 자동으로 시작됩니다. 첫 번째 의존성 요청 시 빌드가 트리거될 수 있습니다.
           draft: false
           prerelease: false
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-  # JitPack 상태 확인 (선택사항)
+  # JitPack 상태 확인
   check-jitpack:
     name: Check JitPack Build Status
     runs-on: ubuntu-latest
-    needs: [determine-version, create-release]
+    needs: [ determine-version, create-release ]
     if: needs.determine-version.outputs.should_release == 'true'
     
     steps:
       - name: Wait for JitPack
         run: |
           echo "⏳ JitPack 빌드 대기 중..."
-          sleep 60  # JitPack이 태그를 감지할 시간 제공
+          sleep 60
 
       - name: Check JitPack build status
         run: |
@@ -174,7 +196,7 @@ jobs:
           
           # JitPack API로 빌드 상태 확인
           RESPONSE=$(curl -s "https://jitpack.io/api/builds/com.github.ckaanf/api-rate-limiter/$VERSION" || echo '{"status":"unknown"}')
-          STATUS=$(echo "$RESPONSE" | jq -r '.status // "unknown"')
+          STATUS=$(echo "$RESPONSE" | jq -r '.status // "unknown"' 2>/dev/null || echo "unknown")
           
           echo "📊 JitPack 빌드 상태: $STATUS"
           echo "🔗 빌드 로그: https://jitpack.io/com/github/ckaanf/api-rate-limiter/$VERSION/build.log"
@@ -197,38 +219,32 @@ jobs:
               ;;
           esac
 
-  # 릴리즈 알림 (선택사항)
+  # 릴리즈 알림
   notify-release:
     name: Notify Release
     runs-on: ubuntu-latest
-    needs: [determine-version, create-release, check-jitpack]
+    needs: [ determine-version, create-release, check-jitpack ]
     if: always() && needs.determine-version.outputs.should_release == 'true'
     
     steps:
       - name: Create release summary
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const version = '${{ needs.determine-version.outputs.tag }}';
-            const jitpackStatus = '${{ needs.check-jitpack.result }}';
-            
-            const summary = `
-            ## 🎉 Release $version Published!
-            
-            **📦 GitHub Release:** [View Release](https://github.com/${{ github.repository }}/releases/tag/${version})
-            
-            **🚀 JitPack Status:** ${jitpackStatus === 'success' ? '✅ Ready' : '⏳ Building'}
-            
-            **📖 Usage:**
-            \`\`\`kotlin
-            dependencies {
-                implementation("com.github.ckaanf.api-rate-limiter:rate-limiter-spring-boot-starter:${version}")
-            }
-            \`\`\`
-            
-            **🔗 Links:**
-            - [JitPack Page](https://jitpack.io/#ckaanf/api-rate-limiter/${version})
-            - [Documentation](https://github.com/${{ github.repository }}#readme)
-            `;
-            
-            console.log(summary);
+        run: |
+          VERSION="${{ needs.determine-version.outputs.tag }}"
+          JITPACK_STATUS="${{ needs.check-jitpack.result }}"
+          
+          echo "## 🎉 Release $VERSION Published!"
+          echo ""
+          echo "**📦 GitHub Release:** [View Release](https://github.com/${{ github.repository }}/releases/tag/$VERSION)"
+          echo ""
+          echo "**🚀 JitPack Status:** $([ "$JITPACK_STATUS" = "success" ] && echo "✅ Ready" || echo "⏳ Building")"
+          echo ""
+          echo "**📖 Usage:**"
+          echo '```kotlin'
+          echo "dependencies {"
+          echo "    implementation(\"com.github.ckaanf.api-rate-limiter:rate-limiter-spring-boot-starter:$VERSION\")"
+          echo "}"
+          echo '```'
+          echo ""
+          echo "**🔗 Links:**"
+          echo "- [JitPack Page](https://jitpack.io/#ckaanf/api-rate-limiter/$VERSION)"
+          echo "- [Documentation](https://github.com/${{ github.repository }}#readme)"
