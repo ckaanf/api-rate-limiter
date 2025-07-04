@@ -203,4 +203,20 @@ public class RateLimiterRegistry {
                     algorithmProviders, storageProviders, rateLimiters);
         }
     }
+
+
+
+        /**
+         * 이름으로 등록된 RateLimiter를 조회합니다.
+         * 설정 파일에 의해 미리 등록된 RateLimiter를 찾을 때 사용됩니다.
+         *
+         * @param name RateLimiter의 이름
+         * @return Optional로 감싸진 RateLimiter. 존재하지 않으면 Optional.empty()를 반환합니다.
+         */
+        public Optional<RateLimiter> findRateLimiter(String name) {
+            return Optional.ofNullable(rateLimiters.get(name));
+        }
+
+
+
 }
