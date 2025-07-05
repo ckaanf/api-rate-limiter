@@ -62,6 +62,16 @@ subprojects {
                             name.set("ckaanf")
                             email.set("skywlstn777@gmail.com")
                         }
+                        developer {
+                            id.set("Junbeeom")
+                            name.set("Junbeeom")
+                            email.set("wns_p@naver.com")
+                        }
+                        developer {
+                            id.set("zinooow")
+                            name.set("Jinho")
+                            email.set("skywlstn777@gmail.com")
+                        }
                     }
 
                     scm {

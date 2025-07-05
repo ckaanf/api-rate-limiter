@@ -1,16 +1,8 @@
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        mavenCentral()
-        maven { url = uri("https://jitpack.io") }
-    }
-}
-
 dependencyResolutionManagement {
-    repositories {
-        mavenCentral()
-        maven { url = uri("https://jitpack.io") }
-    }
+ repositories {
+   mavenCentral()
+   maven { url = uri("https://jitpack.io") }
+ }
 }
 
 rootProject.name = "api-rate-limiter"
