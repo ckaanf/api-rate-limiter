@@ -16,7 +16,6 @@
 | **Core** | ✅ | 핵심 인터페이스와 Registry 패턴 |
 | **Token Bucket** | ✅ | 토큰 버킷 알고리즘 (burst 지원) |
 | **Memory Storage** | ✅ | 메모리 기반 저장소 (TTL, 자동 정리) |
-| **Redis Storage** | 🚧 | Redis 기반 분산 저장소 (개발 중) |
 | **Spring Boot Starter** | 🚧 | Auto-configuration (개발 중) |
 
 ## 🚀 빠른 시작
@@ -26,7 +25,7 @@
 #### JitPack 사용 (권장)
 ```kotlin 
 repositories { 
-    maven("[https://jitpack.io](https://jitpack.io)") 
+    maven("https://jitpack.io") 
 }
 dependencies { 
     // 올인원 패키지 (모든 기본 모듈 포함) 
@@ -44,7 +43,7 @@ implementation("com.github.ckaanf:api-rate-limiter:storage-inmemory:1.0.2")
 repositories 
         { 
             maven 
-                    { url '[https://jitpack.io](https://jitpack.io)'} 
+                    { url(https://jitpack.io)} 
         }
 dependencies 
         { 
@@ -55,7 +54,7 @@ dependencies
 ### 기본 사용법
 
 
-
+- 작성 예정
 
 ## 🤝 기여하기
 
@@ -83,31 +82,3 @@ cd api-rate-limiter
 - **릴리즈 노트**: [https://github.com/ckaanf/api-rate-limiter/releases](https://github.com/ckaanf/api-rate-limiter/releases)
 
 
-> **💡 Tip**: Spring Boot 사용자라면 v1.2 출시를 기다려주세요! Auto-configuration으로 더욱 간편해집니다.
-
-
-## 주요 개선사항 ✨
-
-### 1. **현재 프로젝트 상태 반영**
-- SPI 기반 아키텍처 강조
-- 실제 구현된 기능들 명시
-- 개발 중인 모듈들 구분
-
-### 2. **JitPack 의존성 수정**
-- 올바른 JitPack 문법 사용
-- 개별 모듈과 올인원 패키지 옵션 제공
-
-### 3. **실제 API 반영**
-- `ConsumeResult` 클래스 예제 추가
-- `BucketState` 모니터링 정보
-- Registry 패턴 사용법
-
-### 4. **성능과 아키텍처**
-- SPI 플러그인 시스템 다이어그램
-- 실제 벤치마크 예상치
-- 메모리 사용량 정보
-
-### 5. **개발자 친화적**
-- 다양한 팩토리 메서드 소개
-- 테스트 명령어들
-- 기여 가이드라인
