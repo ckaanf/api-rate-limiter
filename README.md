@@ -29,12 +29,12 @@ repositories {
 }
 dependencies { 
     // 올인원 패키지 (모든 기본 모듈 포함) 
-     implementation("com.github.ckaanf:api-rate-limiter:1.0.2")
+     implementation("com.github.ckaanf:api-rate-limiter:1.0.0")
     
 // 또는 개별 모듈 선택
-implementation("com.github.ckaanf:api-rate-limiter:core:1.0.2")
-implementation("com.github.ckaanf:api-rate-limiter:algorithms-token-bucket:1.0.2")
-implementation("com.github.ckaanf:api-rate-limiter:storage-inmemory:1.0.2")
+implementation("com.github.ckaanf:api-rate-limiter:core:1.0.0")
+implementation("com.github.ckaanf:api-rate-limiter:algorithms-token-bucket:1.0.0")
+implementation("com.github.ckaanf:api-rate-limiter:storage-inmemory:1.0.0")
 }
 ``` 
 
@@ -42,12 +42,11 @@ implementation("com.github.ckaanf:api-rate-limiter:storage-inmemory:1.0.2")
 ```groovy 
 repositories 
         { 
-            maven 
-                    { url(https://jitpack.io)} 
+            maven(url("https://jitpack.io") 
         }
 dependencies 
         { 
-            implementation 'com.github.ckaanf:api-rate-limiter:1.0.2' 
+            implementation 'com.github.ckaanf:api-rate-limiter:1.0.0' 
         }
 ```
 
