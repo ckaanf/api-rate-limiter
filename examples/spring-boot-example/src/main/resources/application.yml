@@ -1,0 +1,6 @@
+ratelimiter:
+  key: "my-api"
+  capacity: 1000
+  refill-period: 1
+  refill-tokens: 50
+  initial-tokens: 500
